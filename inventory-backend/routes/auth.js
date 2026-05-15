@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const bcrypt = require('bcrypt')
-const { readUser, writeUser } = require('../utils/db')
+const db = require('../utils/db')
 const { generateTokens, verifyToken } = require('../utils/jwt')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
@@ -32,21 +32,17 @@ const { sendVerificationEmail } = require('../utils/email')
  *       400:
  *         description: Username already exists
  */
-
 router.post('/register', async (req, res) => {
-  const db = readUser()
   const { username, password, email } = req.body
-  if (db.users.find(u => u.username === username)) {
+  if (db.prepare('SELECT id FROM users WHERE username = ?').get(username)) {
     return res.status(400).json({ error: 'Username already exists' })
   }
   const hashedPassword = await bcrypt.hash(password, 10)
   const code = Math.floor(100000 + Math.random() * 900000).toString()
-  const newUser = { id: Date.now().toString(), username, email, password: hashedPassword, verified: false, verificationCode: code }
-  db.users.push(newUser)
-  writeUser(db)
+  const id = Date.now().toString()
+  db.prepare('INSERT INTO users (id, username, email, password, verified, verificationCode) VALUES (?, ?, ?, ?, 0, ?)').run(id, username, email, hashedPassword, code)
   await sendVerificationEmail(email, username, code)
   res.json({ message: 'User registered. Check your email for verification code.' })
-  router.push('/verify')
 })
 
 /**
@@ -74,19 +70,15 @@ router.post('/register', async (req, res) => {
  */
 router.post('/verify', (req, res) => {
   const { username, code } = req.body
-  const db = readUser()
-  const user = db.users.find(u => u.username === username)
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username)
   if (!user) {
     return res.status(400).json({ error: 'User not found' })
   }
   if (user.verificationCode !== code) {
     return res.status(400).json({ error: 'Invalid code' })
   }
-  user.verified = true
-  user.verificationCode = null
-  writeUser(db)
+  db.prepare('UPDATE users SET verified = 1, verificationCode = NULL WHERE id = ?').run(user.id)
   res.json({ message: 'Email verified successfully' })
-  router.push('/dashboard')
 })
 
 /**
@@ -114,9 +106,8 @@ router.post('/verify', (req, res) => {
  *         description: Invalid credentials
  */
 router.post('/login', async (req, res) => {
-  const { username, password, } = req.body
-  const db = readUser()
-  const user = db.users.find(u => u.username === username)
+  const { username, password } = req.body
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username)
   if (!user) {
     return res.status(400).json({ error: 'Invalid credentials' })
   }
@@ -129,8 +120,6 @@ router.post('/login', async (req, res) => {
   }
   const tokens = generateTokens(user)
   res.json({ tokens })
-  alert('Login successful!')
-  router.push('/dashboard')
 })
 
 /**
@@ -168,6 +157,5 @@ router.post('/refresh', (req, res) => {
   )
   res.json({ accessToken })
 })
-
 
 module.exports = router

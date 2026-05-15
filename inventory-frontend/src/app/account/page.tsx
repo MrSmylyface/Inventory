@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { authFetch } from '@/lib/authFetch'
 
 type Theme = 'dark' | 'light'
 
@@ -39,11 +40,6 @@ export default function Account() {
   const router = useRouter()
   const t = themes[theme]
 
-  const getAuthHeader = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-  })
-
   const logout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
@@ -73,9 +69,8 @@ export default function Account() {
       return
     }
     try {
-      const response = await fetch('http://localhost:3001/api/user/change-username', {
+      const response = await authFetch('http://localhost:3001/api/user/change-username', {
         method: 'PUT',
-        headers: getAuthHeader(),
         body: JSON.stringify({ newUsername, password: currentPasswordForUsername })
       })
       const data = await response.json()
@@ -98,9 +93,8 @@ export default function Account() {
       return
     }
     try {
-      const response = await fetch('http://localhost:3001/api/user/change-password', {
+      const response = await authFetch('http://localhost:3001/api/user/change-password', {
         method: 'PUT',
-        headers: getAuthHeader(),
         body: JSON.stringify({ newPassword, password: currentPasswordForPassword })
       })
       const data = await response.json()

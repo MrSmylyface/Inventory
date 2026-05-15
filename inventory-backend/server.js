@@ -1,5 +1,5 @@
 const express = require("express")
-const { readInventory, writeInventory } = require("./utils/db")
+const db = require("./utils/db")
 const app = express()
 const authRoutes = require("./routes/auth")
 const userRoutes = require("./routes/users")
@@ -56,8 +56,8 @@ app.use('/api/user', userRoutes)
  *         description: Unauthorized
  */
 app.get('/api/inventory',authMiddleware, (req, res) => {
-  const db = readInventory()
-  res.json(db.items)
+  const items = db.prepare('SELECT * FROM items').all()
+  res.json(items)
 })
 
 /**
@@ -90,9 +90,7 @@ app.post('/api/inventory', authMiddleware, (req, res) => {
     return res.status(400).json({ error: 'Name is required and quantity/price must be numbers' })
   }
   const item = { id: Date.now().toString(), name, quantity, price }
-  const currentInventory = readInventory()
-  currentInventory.items.push(item)
-  writeInventory(currentInventory)
+  db.prepare('INSERT INTO items (id, name, quantity, price) VALUES (?, ?, ?, ?)').run(item.id, item.name, item.quantity, item.price)
   res.json(item)
 })
 
@@ -128,14 +126,12 @@ app.put('/api/inventory/:id', authMiddleware, (req, res) => {
   if (!name || isNaN(quantity) || isNaN(price) || quantity === '' || price === '') {
     return res.status(400).json({ error: 'Name is required and quantity/price must be numbers' })
   }
-  const db = readInventory()
-  const index = db.items.findIndex(item => item.id === id)
-  if (index === -1) {
+  const existing = db.prepare('SELECT * FROM items WHERE id = ?').get(id)
+  if (!existing) {
     return res.status(404).json({ error: 'Item not found' })
   }
-  db.items[index] = { ...db.items[index], name, quantity, price }
-  writeInventory(db)
-  res.json(db.items[index])
+  db.prepare('UPDATE items SET name = ?, quantity = ?, price = ? WHERE id = ?').run(name, quantity, price, id)
+  res.json({ id, name, quantity, price })
 })
 
 /**
@@ -160,11 +156,8 @@ app.put('/api/inventory/:id', authMiddleware, (req, res) => {
  */
 app.delete('/api/inventory/:id',authMiddleware, (req, res) => {
   const id = req.params.id
-  const db = readInventory()
-  const newdata = db.items.filter(item => item.id !== id)
-  db.items = newdata
-  writeInventory(db)
-  res.json({message  : " itemdeleted" })
+  db.prepare('DELETE FROM items WHERE id = ?').run(id)
+  res.json({ message: 'Item deleted' })
 })
 
 app.listen(3001, () => {

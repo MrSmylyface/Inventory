@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { authFetch } from '@/lib/authFetch'
 
 type Item = { id: string; name: string; quantity: string; price: string }
 type Theme = 'dark' | 'light'
@@ -59,11 +60,6 @@ export default function Inventory() {
   const router = useRouter()
   const t = themes[theme]
 
-  const getAuthHeader = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-  })
-
   const toggleTheme = () => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
@@ -72,9 +68,8 @@ export default function Inventory() {
 
   const seeInventory = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/inventory', {
-        method: 'GET',
-        headers: getAuthHeader()
+      const response = await authFetch('http://localhost:3001/api/inventory', {
+        method: 'GET'
       })
       const data = await response.json()
       if (Array.isArray(data)) {
@@ -93,9 +88,8 @@ export default function Inventory() {
       return
     }
     try {
-      const response = await fetch('http://localhost:3001/api/inventory', {
+      const response = await authFetch('http://localhost:3001/api/inventory', {
         method: 'POST',
-        headers: getAuthHeader(),
         body: JSON.stringify({ name: itemname, quantity: itemquantity, price: itemprice })
       })
       const data = await response.json()
@@ -110,9 +104,8 @@ export default function Inventory() {
 
   const updateInventory = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/inventory/${id}`, {
+      const response = await authFetch(`http://localhost:3001/api/inventory/${id}`, {
         method: 'PUT',
-        headers: getAuthHeader(),
         body: JSON.stringify({ name: itemname, quantity: itemquantity, price: itemprice })
       })
       await response.json()
@@ -125,9 +118,8 @@ export default function Inventory() {
 
   const deleteInventory = async (id: string) => {
     try {
-      await fetch(`http://localhost:3001/api/inventory/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeader()
+      await authFetch(`http://localhost:3001/api/inventory/${id}`, {
+        method: 'DELETE'
       })
       setItems(prev => prev.filter(item => item.id !== id))
     } catch (err) {
