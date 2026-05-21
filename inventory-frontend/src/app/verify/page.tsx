@@ -52,7 +52,7 @@ export default function Verify() {
         </div>
         <p className={`text-center text-sm mt-6 ${subtext}`}>
           Back to{' '}
-          <button onClick={() => router.push('/login')} className={`font-semibold bg-transparent border-none p-0 ${link}`}>Login</button>
+          <span onClick={() => router.push('/login')} className={`cursor-pointer font-semibold ${link}`}>login</span>
         </p>
       </div>
     </div>

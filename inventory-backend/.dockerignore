@@ -2,4 +2,6 @@ node_modules/
 .env
 logs/
 coverage/
-db/inventory.db
+db/
+.git/
+*.md
