@@ -9,25 +9,26 @@ const {
 } = require('../constants/messages')
 
 async function register({ username, password, email }) {
-  if (User.existsByUsername(username)) return { error: USERNAME_EXISTS }
+  if (await User.findOne({ username })) return { error: USERNAME_EXISTS }
   const hashedPassword = await bcrypt.hash(password, 10)
   const code = Math.floor(100000 + Math.random() * 900000).toString()
-  const id = Date.now().toString()
-  User.create({ id, username, email, password: hashedPassword, verificationCode: code })
+  await User.create({ username, email, password: hashedPassword, verificationCode: code })
   await sendVerificationEmail(email, username, code)
   return { success: true }
 }
 
-function verify({ username, code }) {
-  const user = User.findByUsername(username)
+async function verify({ username, code }) {
+  const user = await User.findOne({ username })
   if (!user) return { error: USER_NOT_FOUND }
   if (user.verificationCode !== code) return { error: INVALID_CODE }
-  User.verify(user.id)
+  user.verified = true
+  user.verificationCode = null
+  await user.save()
   return { success: true }
 }
 
 async function login({ username, password }) {
-  const user = User.findByUsername(username)
+  const user = await User.findOne({ username })
   if (!user) return { error: INVALID_CREDENTIALS }
   if (!user.verified) return { error: EMAIL_NOT_VERIFIED }
   const isMatch = await bcrypt.compare(password, user.password)

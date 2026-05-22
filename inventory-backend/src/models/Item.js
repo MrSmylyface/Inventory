@@ -1,24 +1,13 @@
-const db = require('../config/db')
+const mongoose = require('mongoose')
 
-const Item = {
-  findAll: () =>
-    db.prepare('SELECT * FROM items').all(),
+const itemSchema = new mongoose.Schema(
+  {
+    name:       { type: String, required: true, trim: true },
+    quantity:   { type: Number, required: true },
+    price:      { type: Number, required: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
+  },
+  { timestamps: true }
+)
 
-  findById: (id) =>
-    db.prepare('SELECT * FROM items WHERE id = ?').get(id),
-
-  create: ({ id, name, quantity, price, categoryId = null }) =>
-    db.prepare(
-      'INSERT INTO items (id, name, quantity, price, categoryId, updatedAt) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))'
-    ).run(id, name, quantity, price, categoryId),
-
-  update: (id, { name, quantity, price, categoryId = null }) =>
-    db.prepare(
-      'UPDATE items SET name = ?, quantity = ?, price = ?, categoryId = ?, updatedAt = datetime(\'now\') WHERE id = ?'
-    ).run(name, quantity, price, categoryId, id),
-
-  delete: (id) =>
-    db.prepare('DELETE FROM items WHERE id = ?').run(id),
-}
-
-module.exports = Item
+module.exports = mongoose.model('Item', itemSchema)

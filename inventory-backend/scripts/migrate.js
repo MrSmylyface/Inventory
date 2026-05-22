@@ -1,30 +1,36 @@
 require('../src/config/env')
-const db = require('../src/config/db')
+const mongoose = require('mongoose')
 
+// MongoDB migrations are handled via schema changes in models.
+// Add migration steps here if you need to transform existing data.
 const migrations = [
   {
     version: 1,
-    description: 'Initial schema',
-    up: () => {}, // already applied via db.js on startup
+    description: 'Initial schema — no data migration needed',
+    up: async () => {},
   },
 ]
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS migrations (
-    version INTEGER PRIMARY KEY,
-    description TEXT,
-    appliedAt TEXT NOT NULL DEFAULT (datetime('now'))
-  )
-`)
+async function migrate() {
+  await mongoose.connect(process.env.MONGODB_URI)
+  console.log('Connected to MongoDB')
 
-const applied = db.prepare('SELECT version FROM migrations').all().map((r) => r.version)
+  const db = mongoose.connection.db
+  const col = db.collection('migrations')
 
-for (const m of migrations) {
-  if (!applied.includes(m.version)) {
-    m.up()
-    db.prepare('INSERT INTO migrations (version, description) VALUES (?, ?)').run(m.version, m.description)
-    console.log(`Applied migration v${m.version}: ${m.description}`)
+  const applied = await col.find({}).toArray()
+  const appliedVersions = applied.map((m) => m.version)
+
+  for (const m of migrations) {
+    if (!appliedVersions.includes(m.version)) {
+      await m.up()
+      await col.insertOne({ version: m.version, description: m.description, appliedAt: new Date() })
+      console.log(`Applied migration v${m.version}: ${m.description}`)
+    }
   }
+
+  console.log('Migrations complete.')
+  await mongoose.disconnect()
 }
 
-console.log('Migrations complete.')
+migrate().catch((err) => { console.error(err); process.exit(1) })

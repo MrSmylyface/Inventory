@@ -1,16 +1,14 @@
-const db = require('../config/db')
+const mongoose = require('mongoose')
 
-const AuditLog = {
-  create: ({ id, userId, action, entity, entityId = null, meta = null }) =>
-    db.prepare(
-      'INSERT INTO audit_logs (id, userId, action, entity, entityId, meta) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(id, userId, action, entity, entityId, meta ? JSON.stringify(meta) : null),
+const auditLogSchema = new mongoose.Schema(
+  {
+    userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    action:   { type: String, required: true },
+    entity:   { type: String, required: true },
+    entityId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    meta:     { type: mongoose.Schema.Types.Mixed, default: null },
+  },
+  { timestamps: true }
+)
 
-  findByUser: (userId) =>
-    db.prepare('SELECT * FROM audit_logs WHERE userId = ? ORDER BY createdAt DESC').all(userId),
-
-  findAll: () =>
-    db.prepare('SELECT * FROM audit_logs ORDER BY createdAt DESC').all(),
-}
-
-module.exports = AuditLog
+module.exports = mongoose.model('AuditLog', auditLogSchema)

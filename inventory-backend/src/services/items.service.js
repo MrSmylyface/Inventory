@@ -1,23 +1,23 @@
 const Item = require('../models/Item')
 
-function getAllItems() {
-  return Item.findAll()
+async function getAllItems() {
+  return Item.find().populate('categoryId', 'name')
 }
 
-function createItem({ name, quantity, price, categoryId }) {
-  const id = Date.now().toString()
-  Item.create({ id, name, quantity, price, categoryId })
-  return { id, name, quantity, price, categoryId }
+async function createItem({ name, quantity, price, categoryId }) {
+  return Item.create({ name, quantity, price, categoryId: categoryId || null })
 }
 
-function updateItem(id, { name, quantity, price, categoryId }) {
-  if (!Item.findById(id)) return null
-  Item.update(id, { name, quantity, price, categoryId })
-  return { id, name, quantity, price, categoryId }
+async function updateItem(id, { name, quantity, price, categoryId }) {
+  return Item.findByIdAndUpdate(
+    id,
+    { name, quantity, price, categoryId: categoryId || null },
+    { new: true, runValidators: true }
+  )
 }
 
-function deleteItem(id) {
-  Item.delete(id)
+async function deleteItem(id) {
+  await Item.findByIdAndDelete(id)
 }
 
 module.exports = { getAllItems, createItem, updateItem, deleteItem }

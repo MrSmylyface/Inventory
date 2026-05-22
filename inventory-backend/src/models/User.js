@@ -1,28 +1,15 @@
-const db = require('../config/db')
+const mongoose = require('mongoose')
 
-const User = {
-  findById: (id) =>
-    db.prepare('SELECT * FROM users WHERE id = ?').get(id),
+const userSchema = new mongoose.Schema(
+  {
+    username: { type: String, required: true, unique: true, trim: true },
+    email:    { type: String, required: true, trim: true, lowercase: true },
+    password: { type: String, required: true },
+    verified: { type: Boolean, default: false },
+    verificationCode: { type: String, default: null },
+    role: { type: String, enum: ['admin', 'staff', 'viewer'], default: 'staff' },
+  },
+  { timestamps: true }
+)
 
-  findByUsername: (username) =>
-    db.prepare('SELECT * FROM users WHERE username = ?').get(username),
-
-  existsByUsername: (username) =>
-    !!db.prepare('SELECT id FROM users WHERE username = ?').get(username),
-
-  create: ({ id, username, email, password, verificationCode }) =>
-    db.prepare(
-      'INSERT INTO users (id, username, email, password, verified, verificationCode) VALUES (?, ?, ?, ?, 0, ?)'
-    ).run(id, username, email, password, verificationCode),
-
-  verify: (id) =>
-    db.prepare('UPDATE users SET verified = 1, verificationCode = NULL WHERE id = ?').run(id),
-
-  updateUsername: (id, username) =>
-    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, id),
-
-  updatePassword: (id, password) =>
-    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(password, id),
-}
-
-module.exports = User
+module.exports = mongoose.model('User', userSchema)

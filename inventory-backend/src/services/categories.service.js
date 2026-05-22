@@ -1,24 +1,20 @@
 const Category = require('../models/Category')
 
-function getAll() {
-  return Category.findAll()
+async function getAll() {
+  return Category.find()
 }
 
-function create({ name, description }) {
-  if (Category.findByName(name)) return { error: 'Category already exists.' }
-  const id = Date.now().toString()
-  Category.create({ id, name, description })
-  return { id, name, description }
+async function create({ name, description }) {
+  if (await Category.findOne({ name })) return { error: 'Category already exists.' }
+  return Category.create({ name, description })
 }
 
-function update(id, { name, description }) {
-  if (!Category.findById(id)) return null
-  Category.update(id, { name, description })
-  return { id, name, description }
+async function update(id, { name, description }) {
+  return Category.findByIdAndUpdate(id, { name, description }, { new: true, runValidators: true })
 }
 
-function remove(id) {
-  Category.delete(id)
+async function remove(id) {
+  await Category.findByIdAndDelete(id)
 }
 
 module.exports = { getAll, create, update, remove }

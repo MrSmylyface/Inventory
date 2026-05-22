@@ -1,8 +1,7 @@
 const AuditLog = require('../models/AuditLog')
 
-function log({ userId, action, entity, entityId, meta }) {
-  const id = Date.now().toString()
-  AuditLog.create({ id, userId, action, entity, entityId, meta })
+async function log({ userId, action, entity, entityId, meta }) {
+  await AuditLog.create({ userId, action, entity, entityId: entityId || null, meta: meta || null })
 }
 
 module.exports = { log }
