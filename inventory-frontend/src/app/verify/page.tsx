@@ -25,7 +25,12 @@ export default function Verify() {
         body: JSON.stringify({ username, code })
       })
       const data = await response.json()
-      alert(data.message || data.error)
+      if (data.success) {
+        alert(data.message)
+        router.push('/login')
+      } else {
+        alert(data.message || 'Verification failed.')
+      }
     } catch (err) {
       alert('Network error. Please check your connection.')
     }

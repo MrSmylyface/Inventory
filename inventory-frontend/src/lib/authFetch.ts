@@ -9,8 +9,8 @@ async function tryRefresh(): Promise<boolean> {
     })
     if (!res.ok) return false
     const data = await res.json()
-    if (!data.accessToken) return false
-    localStorage.setItem('accessToken', data.accessToken)
+    if (!data.data?.accessToken) return false
+    localStorage.setItem('accessToken', data.data.accessToken)
     return true
   } catch {
     return false

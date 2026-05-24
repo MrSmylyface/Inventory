@@ -72,10 +72,10 @@ export default function Inventory() {
         method: 'GET'
       })
       const data = await response.json()
-      if (Array.isArray(data)) {
-        setItems(data)
+      if (Array.isArray(data.data)) {
+        setItems(data.data)
       } else {
-        alert(data.error || 'Failed to load inventory')
+        alert(data.message || 'Failed to load inventory')
       }
     } catch (err) {
       alert('Network error. Please check your connection.')
@@ -90,10 +90,10 @@ export default function Inventory() {
     try {
       const response = await authFetch('http://localhost:3001/api/inventory', {
         method: 'POST',
-        body: JSON.stringify({ name: itemname, quantity: itemquantity, price: itemprice })
+        body: JSON.stringify({ name: itemname, quantity: Number(itemquantity), price: Number(itemprice) })
       })
       const data = await response.json()
-      setItems(prev => [...prev, data])
+      setItems(prev => [...prev, data.data])
       setItemname('')
       setItemquantity('')
       setItemprice('')
@@ -106,7 +106,7 @@ export default function Inventory() {
     try {
       const response = await authFetch(`http://localhost:3001/api/inventory/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: itemname, quantity: itemquantity, price: itemprice })
+        body: JSON.stringify({ name: itemname, quantity: Number(itemquantity), price: Number(itemprice) })
       })
       await response.json()
       setEditId(null)

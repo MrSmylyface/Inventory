@@ -25,9 +25,9 @@ export default function Login() {
         body: JSON.stringify({ username, password })
       })
       const data = await response.json()
-      if (data.tokens) {
-        localStorage.setItem('accessToken', data.tokens.accessToken)
-        localStorage.setItem('refreshToken', data.tokens.refreshToken)
+      if (data.data?.tokens) {
+        localStorage.setItem('accessToken', data.data.tokens.accessToken)
+        localStorage.setItem('refreshToken', data.data.tokens.refreshToken)
         router.push('/dashboard')
       } else {
         alert(data.error)
