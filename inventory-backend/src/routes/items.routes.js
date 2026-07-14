@@ -2,7 +2,7 @@ const router = require('express').Router()
 const itemsController = require('../controllers/items.controller')
 const authMiddleware = require('../middleware/auth')
 const validate = require('../middleware/validate')
-const { itemSchema } = require('../validators/item.validator')
+const { itemSchema, itemUpdateSchema, receiveSchema } = require('../validators/item.validator')
 
 /**
  * @swagger
@@ -88,7 +88,63 @@ router.post('/', authMiddleware, validate(itemSchema), itemsController.create)
  *       401:
  *         description: Unauthorized
  */
-router.put('/:id', authMiddleware, validate(itemSchema), itemsController.update)
+router.put('/:id', authMiddleware, validate(itemUpdateSchema), itemsController.update)
+
+/**
+ * @swagger
+ * /api/inventory/{id}:
+ *   get:
+ *     summary: Get a single inventory item
+ *     tags: [Inventory]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: The item
+ *       404:
+ *         description: Item not found
+ */
+router.get('/:id', authMiddleware, itemsController.getOne)
+
+/**
+ * @swagger
+ * /api/inventory/{id}/receive:
+ *   post:
+ *     summary: Receive stock against an item (increments quantity)
+ *     tags: [Inventory]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [quantity]
+ *             properties:
+ *               quantity:
+ *                 type: number
+ *               bin:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Updated item
+ *       404:
+ *         description: Item not found
+ */
+router.post('/:id/receive', authMiddleware, validate(receiveSchema), itemsController.receive)
 
 /**
  * @swagger

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 
 export default function Home() {
-  redirect('/login')
+  // The app layout bounces you to /login if there is no token.
+  redirect('/inventory')
 }

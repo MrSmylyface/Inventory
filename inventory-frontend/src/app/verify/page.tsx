@@ -1,63 +1,107 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
-export default function Verify() {
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { API } from '@/lib/api'
+import { useLocalStorageValue } from '@/lib/useLocalStorageValue'
+
+const FIELD =
+  'w-full rounded-sm border border-line-strong bg-surface px-2.5 py-2 text-[13px] text-ink placeholder:text-faint focus:border-accent focus:outline-none'
+const LABEL = 'mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted'
+
+export default function VerifyPage() {
   const [code, setCode] = useState('')
-  const [dark, setDark] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    const saved = localStorage.getItem('theme')
-    if (saved) {
-      setDark(saved === 'dark')
-    } else {
-      setDark(window.matchMedia('(prefers-color-scheme: dark)').matches)
-    }
-  }, [])
+  // Prefilled from the register step; `edited` takes over once the user types.
+  const pendingUsername = useLocalStorageValue('pendingUsername') ?? ''
+  const [edited, setEdited] = useState<string | null>(null)
+  const username = edited ?? pendingUsername
+  const setUsername = setEdited
 
-  const handleVerify = async () => {
-    const username = localStorage.getItem('pendingUsername')
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
     try {
-      const response = await fetch('http://localhost:3001/api/auth/verify', {
+      const res = await fetch(`${API}/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, code })
+        body: JSON.stringify({ username, code }),
       })
-      const data = await response.json()
-      if (data.success) {
-        alert(data.message)
-        router.push('/login')
-      } else {
-        alert(data.message || 'Verification failed.')
+      const data = await res.json()
+      if (!res.ok || data.success === false) {
+        setError(data.error || 'That code was not accepted.')
+        return
       }
-    } catch (err) {
-      alert('Network error. Please check your connection.')
+      localStorage.removeItem('pendingUsername')
+      router.push('/login')
+    } catch {
+      setError('Could not reach the server on port 3001.')
+    } finally {
+      setBusy(false)
     }
   }
 
-  const bg = dark ? 'bg-zinc-800' : 'bg-gray-100'
-  const card = dark ? 'bg-zinc-900 border border-zinc-700' : 'bg-white border border-yellow-200'
-  const text = dark ? 'text-yellow-300' : 'text-gray-900'
-  const subtext = dark ? 'text-yellow-100' : 'text-gray-500'
-  const input = dark
-    ? 'bg-zinc-800 text-white placeholder-gray-500 border border-zinc-600 focus:border-yellow-400 outline-none'
-    : 'bg-yellow-50 text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-yellow-500 outline-none'
-  const btn = dark ? 'bg-yellow-400 text-black hover:bg-yellow-300 font-bold' : 'bg-yellow-500 text-black hover:bg-yellow-400 font-bold'
-  const link = dark ? 'text-yellow-400 hover:text-yellow-300' : 'text-yellow-600 hover:text-yellow-500'
-
   return (
-    <div className={`flex min-h-screen items-center justify-center ${bg}`}>
-      <div className={`w-full max-w-md p-8 rounded-2xl shadow-xl ${card}`}>
-        <h1 className={`text-3xl font-bold mb-2 text-center ${text}`}>Verify email</h1>
-        <p className={`text-center text-sm mb-8 ${subtext}`}>Enter the code sent to your email</p>
-        <div className="flex flex-col gap-4">
-          <input value={code} onChange={e => setCode(e.target.value)} type="text" placeholder="Verification code" className={`p-3 rounded-lg w-full ${input}`} />
-          <button onClick={handleVerify} className={`p-3 rounded-lg transition ${btn}`}>Verify</button>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-[340px]">
+        <div className="mb-6 flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-accent text-[12px] font-semibold text-white">
+            SR
+          </div>
+          <div className="leading-tight">
+            <div className="text-[14px] font-semibold tracking-tight">Stockroom</div>
+            <div className="text-[11px] text-faint">Bay 4 · Warehouse</div>
+          </div>
         </div>
-        <p className={`text-center text-sm mt-6 ${subtext}`}>
-          Back to{' '}
-          <span onClick={() => router.push('/login')} className={`cursor-pointer font-semibold ${link}`}>login</span>
+
+        <form onSubmit={submit} className="rounded-sm border border-line bg-surface p-4">
+          <h1 className="mb-1 text-[13px] font-semibold">Verify your email</h1>
+          <p className="mb-4 text-[12px] text-muted">Enter the 6-digit code we emailed you.</p>
+
+          <div className="mb-3">
+            <label className={LABEL} htmlFor="username">Username</label>
+            <input
+              id="username"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className={FIELD}
+            />
+          </div>
+
+          <div>
+            <label className={LABEL} htmlFor="code">Verification code</label>
+            <input
+              id="code"
+              required
+              inputMode="numeric"
+              maxLength={6}
+              autoFocus
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="000000"
+              className={`${FIELD} num tracking-[0.3em]`}
+            />
+          </div>
+
+          {error && <p className="mt-3 rounded-sm bg-out-soft px-2 py-1.5 text-[12px] text-out">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="mt-4 w-full rounded-sm bg-accent py-2 text-[13px] font-medium text-white hover:bg-accent-hover disabled:opacity-60"
+          >
+            {busy ? 'Verifying…' : 'Verify'}
+          </button>
+        </form>
+
+        <p className="mt-3 text-[12px] text-muted">
+          Back to <Link href="/login" className="text-accent hover:underline">sign in</Link>
         </p>
       </div>
     </div>

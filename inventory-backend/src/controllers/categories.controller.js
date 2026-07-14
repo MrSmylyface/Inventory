@@ -6,7 +6,7 @@ const { CATEGORY_NOT_FOUND } = require('../constants/messages')
 const { OK, CREATED } = require('../constants/httpStatus')
 
 const getAll = asyncHandler(async (req, res) => {
-  const categories = categoriesService.getAll()
+  const categories = await categoriesService.getAll()
   res.status(OK).json(new ApiResponse(OK, categories))
 })
 
@@ -23,7 +23,7 @@ const update = asyncHandler(async (req, res) => {
 })
 
 const remove = asyncHandler(async (req, res) => {
-  categoriesService.remove(req.params.id)
+  await categoriesService.remove(req.params.id)
   res.status(OK).json(new ApiResponse(OK, null, 'Category deleted.'))
 })
 

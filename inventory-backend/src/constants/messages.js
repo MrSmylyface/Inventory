@@ -20,6 +20,8 @@ module.exports = {
   // Items
   ITEM_NOT_FOUND: 'Item not found.',
   ITEM_DELETED: 'Item deleted.',
+  SKU_EXISTS: 'An item with this SKU already exists.',
+  STOCK_RECEIVED: 'Stock received.',
 
   // Categories
   CATEGORY_NOT_FOUND: 'Category not found.',

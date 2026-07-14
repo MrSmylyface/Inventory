@@ -14,7 +14,7 @@ const register = asyncHandler(async (req, res) => {
 })
 
 const verify = asyncHandler(async (req, res) => {
-  const result = authService.verify(req.body)
+  const result = await authService.verify(req.body)
   if (result.error) throw new ApiError(400, result.error)
   res.status(OK).json(new ApiResponse(OK, null, VERIFY_SUCCESS))
 })
